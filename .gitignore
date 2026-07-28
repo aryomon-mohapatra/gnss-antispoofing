@@ -1,0 +1,10 @@
+models/
+data/raw/
+data/features/
+__pycache__/
+*.pyc
+*.pth
+*.pkl
+*.json
+results/
+.env
