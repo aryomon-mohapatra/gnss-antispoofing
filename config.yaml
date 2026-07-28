@@ -1,0 +1,63 @@
+data:
+  raw_dir: "./data/raw"
+  features_dir: "./data/features"
+  sample_dir: "./data/sample"
+  window_size: 30          # LSTM sequence length (epochs)
+  test_split: 0.20
+  val_split: 0.10
+  random_seed: 42
+
+features:
+  signal_quality:
+    - cn0_mean            # Mean C/N₀ across satellites
+    - cn0_std             # Std of C/N₀ (spoofers = unnaturally uniform)
+    - agc_level           # Automatic Gain Control
+    - carrier_phase_noise # Phase noise variance
+    - signal_lock_time    # Time since last lock
+    - cycle_slip_count    # Number of cycle slips
+  geometry:
+    - pdop                # Position Dilution of Precision
+    - hdop                # Horizontal DOP
+    - vdop                # Vertical DOP
+    - doppler_residual    # Doppler vs. expected from velocity
+    - velocity_consistency # Velocity coherence across epochs
+    - position_jump       # Position delta between epochs
+  cross_satellite:
+    - pseudorange_residual_mean
+    - pseudorange_residual_std
+    - toa_spread          # Time-of-arrival spread
+    - inter_sat_correlation
+    - nav_message_anomaly # Navigation message flag
+    - iono_residual       # Ionospheric residual consistency
+
+lstm_autoencoder:
+  hidden_size: 128
+  latent_dim: 64
+  num_layers: 2
+  dropout: 0.2
+  learning_rate: 0.001
+  epochs: 100
+  batch_size: 64
+  early_stopping_patience: 15
+  anomaly_threshold_percentile: 95   # Flag if MSE > 95th pct of clean data
+
+xgboost:
+  n_estimators: 500
+  max_depth: 6
+  learning_rate: 0.05
+  subsample: 0.8
+  colsample_bytree: 0.8
+  scale_pos_weight: 10    # Handles genuine >> spoofed imbalance
+  eval_metric: "auc"
+  early_stopping_rounds: 30
+
+ensemble:
+  lstm_weight: 0.45
+  xgboost_weight: 0.55
+  decision_threshold: 0.5  # Tune on validation set
+
+output:
+  models_dir: "./models"
+  results_dir: "./results"
+  lstm_checkpoint: "./models/lstm_autoencoder.pth"
+  xgboost_checkpoint: "./models/xgboost_model.json"
